@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juegos de Memoria y Escritura</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(to bottom, #ff0000, #add8e6);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1 { color: #333; margin: 20px 0; }
+        
+        .screen {
+            display: none;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .screen.active { display: block; }
+
+        /* Rules Screen */
+        .rules-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 800px;
+            margin: 50px auto;
+            text-align: left;
+        }
+
+        .rules-container h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2.5em;
+        }
+
+        .rules-container ol {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #444;
+        }
+
+        .rules-container li { margin-bottom: 15px; }
+
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn-start {
+            font-size: 20px;
+            padding: 20px 40px;
+            display: block;
+            margin: 30px auto;
+        }
+
+        /* Setup Screen */
+        .setup-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 600px;
+            margin: 50px auto;
+        }
+
+        .participant-input {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .participant-input input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            width: 250px;
+        }
+
+        .participants-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .participant-item {
+            background: white;
+            padding: 8px 15px;
+            margin: 5px 0;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+        }
+
+        /* Roulette */
+        .roulette-container {
+            margin: 30px auto;
+            position: relative;
+        }
+
+        .arrow {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid red;
+            z-index: 10;
+        }
+
+        .roulette {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto;
+            border: 5px solid #333;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: transform 3s ease-out;
+        }
+
+        /* Game Screens */
+        .timer {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff0000;
+            margin: 15px 0;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+
+        .player-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 700px;
+        }
+
+        .current-player {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .scores {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .score-item {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Memory Games */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 500px;
+            margin: 30px auto;
+            justify-items: center;
+        }
+
+        .memory-card {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #ddd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            border: 4px solid #333;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .memory-card:hover:not(.matched) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .memory-card.flipped {
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .memory-card.matched {
+            border-color: gold;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Color specific styles */
+        .color-rojo-oscuro { background-color: darkred; }
+        .color-azul-oscuro { background-color: darkblue; }
+        .color-verde-oscuro { background-color: darkgreen; }
+        .color-amarillo-oscuro { background-color: #B8860B; }
+        .color-morado-oscuro { background-color: darkmagenta; }
+        .color-gris-oscuro { background-color: dimgray; }
+
+        /* Animal and emotion cards */
+        .memory-card.animal, .memory-card.emotion {
+            font-size: 50px;
+            background-color: white;
+            color: #333;
+        }
+
+        /* Writing Games */
+        .writing-display {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            margin: 30px auto;
+            border: 5px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            font-weight: bold;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .writing-display.color {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .input-section {
+            margin: 30px 0;
+        }
+
+        .answer-input {
+            padding: 20px;
+            font-size: 20px;
+            border: 3px solid #ddd;
+            border-radius: 25px;
+            width: 400px;
+            text-align: center;
+            margin: 15px;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .submit-btn {
+            padding: 20px 40px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .feedback {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        /* Final Results */
+        .results-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px auto;
+            max-width: 800px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .results-table th, .results-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #ddd;
+            font-size: 16px;
+        }
+
+        .results-table th {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .winner-row {
+            background: #fff3cd;
+            font-weight: bold;
+            border: 2px solid #ffc107;
+        }
+
+        /* Admin Panel */
+        .admin-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: rgba(255, 107, 53, 0.9);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #000, #00f);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .login-field {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .login-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        /* Login screen snow animation */
+        .snow {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            animation: fall linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            from {
+                top: -10px;
+                opacity: 1;
+            }
+            to {
+                top: 100vh;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Rules Screen -->
+    <div id="rules-screen" class="screen active">
+        <div class="rules-container">
+            <h1>🎮 Juegos de Memoria y Escritura</h1>
+            <h2>Reglas del Juego:</h2>
+            <ol>
+                <li><strong>6 Juegos en Total:</strong> 3 juegos de memoria (colores, animales, emociones) y 3 juegos de escritura (inglés/español).</li>
+                <li><strong>Tiempo por Turno:</strong> Cada jugador tiene 70 segundos para completar su turno en cada juego.</li>
+                <li><strong>Juegos de Memoria:</strong> Encuentra parejas de cartas idénticas. Cada pareja encontrada otorga 1 punto.</li>
+                <li><strong>Juegos de Escritura:</strong> Escribe la traducción correcta en formato "Inglés / Español". Ejemplo: "Dark red / Rojo oscuro"</li>
+                <li><strong>Puntuación:</strong> Los puntos y nombres se muestran debajo de cada juego. Al final se muestra el total de puntos y errores.</li>
+                <li><strong>Respuestas Incorrectas:</strong> Si una respuesta es incorrecta, se mostrará la respuesta correcta.</li>
+            </ol>
+            <button class="btn btn-start" onclick="showSetup()">🚀 Iniciar Juego</button>
+            <button class="btn" onclick="showAdmin()">👨‍💼 Panel Admin</button>
+        </div>
+    </div>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen" class="screen">
+        <div class="setup-container">
+            <h1>👥 Agregar Participantes</h1>
+            <div class="participant-input">
+                <input type="text" id="participant-name" placeholder="Nombre del participante" maxlength="20">
+                <button class="btn" onclick="addParticipant()">Agregar</button>
+            </div>
+            <div class="participants-list">
+                <h3>Participantes:</h3>
+                <div id="participants-container">
+                    <p>No hay participantes agregados</p>
+                </div>
+            </div>
+            <button class="btn btn-start" onclick="startRoulette()" id="start-roulette-btn" disabled>🎰 Girar Ruleta</button>
+        </div>
+    </div>
+
+    <!-- Roulette Screen -->
+    <div id="roulette-screen" class="screen">
+        <h1>🎰 Ruleta para Elegir Quién Inicia</h1>
+        <div class="roulette-container">
+            <div class="arrow"></div>
+            <div class="roulette" id="roulette">
+                <svg width="300" height="300" viewBox="0 0 300 300" id="roulette-svg">
+                </svg>
+            </div>
+            <button class="btn btn-start" onclick="spinRoulette()">🎲 Girar Ruleta</button>
+        </div>
+        <div id="roulette-result"></div>
+    </div>
+
+    <!-- Memory Game 1: Colors -->
+    <div id="memory-colors" class="screen">
+        <div class="game-progress">Juego 1 de 6: Memoria de Colores Oscuros</div>
+        <h1>🎨 Memoria de Colores Oscuros</h1>
+        <div class="timer">⏰ Tiempo: <span id="timer-colors">70</span>s</div>
+        <div class="player-info">
+            <div class="current-player">Turno de: <span id="current-player-colors"></span></div>
+            <div class="scores" id="scores-colors"></div>
+        </div>
+        <div class="memory-grid" id="grid-colors"></div>
+    </div>
+
+    <!-- Memory Game 2: Animals -->
+    <div id="memory-animals" class="screen">
+        <div class="game-progress">Juego 2 de 6: Memoria de Animales</div>
+        <h1>🐾 Memoria de Animales</h1>
+        <div class="timer">⏰ Tiempo: <span id="timer-animals">70</span>s</div>
+        <div class="player-info">
+            <div class="current-player">Turno de: <span id="current-player-animals"></span></div>
+            <div class="scores" id="scores-animals"></div>
+        </div>
+        <div class="memory-grid" id="grid-animals"></div>
+    </div>
+
+    <!-- Memory Game 3: Emotions -->
+    <div id="memory-emotions" class="screen">
+        <div class="game-progress">Juego 3 de 6: Memoria de Emociones</div>
+        <h1>😊 Memoria de Emociones</h1>
+        <div class="timer">⏰ Tiempo: <span id="timer-emotions">70</span>s</div>
+        <div class="player-info">
+            <div class="current-player">Turno de: <span id="current-player-emotions"></span></div>
+            <div class="scores" id="scores-emotions"></div>
+        </div>
+        <div class="memory-grid" id="grid-emotions"></div>
+    </div>
+
+    <!-- Writing Game 1: Colors -->
+    <div id="writing-colors" class="screen">
+        <div class="game-progress">Juego 4 de 6: Escritura de Colores</div>
+        <h1>✏️ Escribir Colores (Inglés / Español)</h1>
+        <div class="timer">⏰ Tiempo: <span id="timer-write-colors">70</span>s</div>
+        <div class="player-info">
+            <div class="current-player">Turno de: <span id="current-player-write-colors"></span></div>
+            <div class="scores" id="scores-write-colors"></div>
+        </div>
+        <div class="writing-display color" id="display-write-colors"></div>
+        <div class="input-section">
+            <input type="text" class="answer-input" id="input-write-colors" placeholder="Ejemplo: Dark red / Rojo oscuro">
+            <br>
+            <button class="submit-btn" onclick="checkWritingAnswer('colors')">✅ Verificar Respuesta</button>
+        </div>
+        <div class="feedback" id="feedback-write-colors"></div>
+    </div>
+
+    <!-- Writing Game 2: Animals -->
+    <div id="writing-animals" class="screen">
+        <div class="game-progress">Juego 5 de 6: Escritura de Animales</div>
+        <h1>🦊 Escribir Animales (Inglés / Español)</h1>
+        <div class="timer">⏰ Tiempo: <span id="timer-write-animals">70</span>s</div>
+        <div class="player-info">
+            <div class="current-player">Turno de: <span id="current-player-write-animals"></span></div>
+            <div class="scores" id="scores-write-animals"></div>
+        </div>
+        <div class="writing-display" id="display-write-animals"></div>
+        <div class="input-section">
+            <input type="text" class="answer-input" id="input-write-animals" placeholder="Ejemplo: Dog / Perro">
+            <br>
+            <button class="submit-btn" onclick="checkWritingAnswer('animals')">✅ Verificar Respuesta</button>
+        </div>
+        <div class="feedback" id="feedback-write-animals"></div>
+    </div>
+
+    <!-- Writing Game 3: Emotions -->
+    <div id="writing-emotions" class="screen">
+        <div class="game-progress">Juego 6 de 6: Escritura de Emociones</div>
+        <h1>😍 Escribir Emociones (Inglés / Español)</h1>
+        <div class="timer">⏰ Tiempo: <span id="timer-write-emotions">70</span>s</div>
+        <div class="player-info">
+            <div class="current-player">Turno de: <span id="current-player-write-emotions"></span></div>
+            <div class="scores" id="scores-write-emotions"></div>
+        </div>
+        <div class="writing-display" id="display-write-emotions"></div>
+        <div class="input-section">
+            <input type="text" class="answer-input" id="input-write-emotions" placeholder="Ejemplo: Happy / Feliz">
+            <br>
+            <button class="submit-btn" onclick="checkWritingAnswer('emotions')">✅ Verificar Respuesta</button>
+        </div>
+        <div class="feedback" id="feedback-write-emotions"></div>
+    </div>
+
+    <!-- Final Results -->
+    <div id="final-results" class="screen">
+        <div class="results-container">
+            <h1>🏆 Resultados Finales</h1>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Participante</th>
+                        <th>Puntos Totales</th>
+                        <th>Errores Cometidos</th>
+                        <th>Posición</th>
+                    </tr>
+                </thead>
+                <tbody id="final-results-body">
+                </tbody>
+            </table>
+            <button class="btn btn-start" onclick="resetGame()">🔄 Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="login-screen" class="login-screen">
+        <!-- Snowfall Animation -->
+        <div class="snow" style="left: 5%; animation-duration: 8s; animation-delay: 0s;"></div>
+        <div class="snow" style="left: 10%; animation-duration: 10s; animation-delay: 1s;"></div>
+        <div class="snow" style="left: 15%; animation-duration: 12s; animation-delay: 2s;"></div>
+        <div class="snow" style="left: 20%; animation-duration: 9s; animation-delay: 0.5s;"></div>
+        <div class="snow" style="left: 25%; animation-duration: 11s; animation-delay: 1.5s;"></div>
+        <div class="snow" style="left: 30%; animation-duration: 8s; animation-delay: 2.5s;"></div>
+        <div class="snow" style="left: 35%; animation-duration: 13s; animation-delay: 0.8s;"></div>
+        <div class="snow" style="left: 40%; animation-duration: 10s; animation-delay: 3s;"></div>
+        <div class="snow" style="left: 45%; animation-duration: 9s; animation-delay: 1.2s;"></div>
+        <div class="snow" style="left: 50%; animation-duration: 11s; animation-delay: 2.2s;"></div>
+        <div class="snow" style="left: 55%; animation-duration: 8s; animation-delay: 0.3s;"></div>
+        <div class="snow" style="left: 60%; animation-duration: 12s; animation-delay: 1.8s;"></div>
+        <div class="snow" style="left: 65%; animation-duration: 10s; animation-delay: 2.8s;"></div>
+        <div class="snow" style="left: 70%; animation-duration: 9s; animation-delay: 0.7s;"></div>
+        <div class="snow" style="left: 75%; animation-duration: 11s; animation-delay: 3.2s;"></div>
+        <div class="snow" style="left: 80%; animation-duration: 13s; animation-delay: 1.3s;"></div>
+        <div class="snow" style="left: 85%; animation-duration: 8s; animation-delay: 2.7s;"></div>
+        <div class="snow" style="left: 90%; animation-duration: 10s; animation-delay: 0.9s;"></div>
+        <div class="snow" style="left: 95%; animation-duration: 12s; animation-delay: 3.5s;"></div>
+        <div class="snow" style="left: 3%; animation-duration: 9s; animation-delay: 1.7s;"></div>
+        
+        <div class="login-box">
+            <h1>🔐 Login Administrador</h1>
+            <div class="login-field">
+                <label>Usuario:</label>
+                <input type="text" id="admin-user">
+            </div>
+            <div class="login-field">
+                <label>Contraseña:</label>
+                <input type="password" id="admin-pass">
+            </div>
+            <button class="btn" onclick="adminLogin()">🚀 Iniciar Sesión</button>
+            <button class="btn" onclick="hideAdmin()">❌ Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-screen" class="screen">
+        <div style="background: rgba(255,255,255,0.95); padding: 40px; border-radius: 20px; margin: 20px auto; max-width: 1000px;">
+            <h2>🎮 Panel de Administrador</h2>
+            
+            <!-- Sección Ver Respuestas -->
+            <div style="background: rgba(255, 255, 255, 0.9); margin: 20px 0; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left: 4px solid #4CAF50;">
+                <h3>📋 Respuestas del Juego</h3>
+                <button class="btn" onclick="mostrarRespuestasInteractivas()">Ver Todas las Respuestas</button>
+                <div id="respuestas-interactivas" style="display: none; margin-top: 20px;">
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(248, 249, 250, 0.8); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <h4>🎨 Memoria Colores</h4>
+                        <div id="respuestas-colores-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(248, 249, 250, 0.8); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <h4>🐾 Memoria Animales</h4>
+                        <div id="respuestas-animales-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(248, 249, 250, 0.8); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <h4>😊 Memoria Emociones</h4>
+                        <div id="respuestas-emociones-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(248, 249, 250, 0.8); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <h4>✏️ Escritura Colores</h4>
+                        <div id="respuestas-escritura-colores-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(248, 249, 250, 0.8); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <h4>🦊 Escritura Animales</h4>
+                        <div id="respuestas-escritura-animales-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(248, 249, 250, 0.8); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <h4>😍 Escritura Emociones</h4>
+                        <div id="respuestas-escritura-emociones-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;"></div>
+                    </div>
+                    <button class="btn" onclick="ocultarRespuestas()" style="background: linear-gradient(45deg, #6c757d, #5a6268);">Ocultar Respuestas</button>
+                </div>
+            </div>
+
+            <!-- Sección Cambiar Juego -->
+            <div style="background: rgba(255, 255, 255, 0.9); margin: 20px 0; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left: 4px solid #4CAF50;">
+                <h3>🎯 Navegación de Juegos</h3>
+                <select id="cambiar-juego-select" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; margin: 5px; background: white; min-width: 300px;">
+                    <option value="">Seleccionar juego</option>
+                    <option value="memory-colors">🎨 Memoria Colores</option>
+                    <option value="memory-animals">🐾 Memoria Animales</option>
+                    <option value="memory-emotions">😊 Memoria Emociones</option>
+                    <option value="writing-colors">✏️ Escritura Colores</option>
+                    <option value="writing-animals">🦊 Escritura Animales</option>
+                    <option value="writing-emotions">😍 Escritura Emociones</option>
+                    <option value="final-results">🏆 Resultados Finales</option>
+                </select>
+                <button class="btn" onclick="irAJuegoSeleccionado()">Ir al Juego Seleccionado</button>
+            </div>
+
+            <!-- Sección Gestión de Puntos -->
+            <div style="background: rgba(255, 255, 255, 0.9); margin: 20px 0; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left: 4px solid #4CAF50;">
+                <h3>⚡ Gestión de Puntos</h3>
+                <button class="btn" onclick="resetearPuntos()" style="background: linear-gradient(45deg, #dc3545, #c82333);">Resetear Todos los Puntos</button>
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px;">
+                    <input type="number" id="cambiar-puntos-index" placeholder="Índice del participante (0, 1, 2...)" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; margin: 5px; background: white;">
+                    <input type="number" id="cambiar-puntos-valor" placeholder="Nuevos puntos" style="padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; margin: 5px; background: white;">
+                    <button class="btn" onclick="cambiarPuntos()">Cambiar Puntos</button>
+                </div>
+            </div>
+
+            <!-- Sección Cambiar Respuestas -->
+            <div style="background: rgba(255, 255, 255, 0.9); margin: 20px 0; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left: 4px solid #4CAF50;">
+                <h3>🔧 Herramientas Visuales</h3>
+                <button class="btn" onclick="simularRespuestaIncorrecta()" style="background: linear-gradient(45deg, #ffc107, #e0a800); color: #212529;">Simular Respuesta Incorrecta</button>
+                <p style="font-size: 12px; color: #666; font-style: italic; margin: 10px 0;">* Esta función cambia la apariencia visual temporalmente</p>
+            </div>
+
+            <button class="btn" onclick="volverAlMenu()" style="background: linear-gradient(45deg, #6c757d, #5a6268);">⬅️ Volver al Menú Principal</button>
+        </div>
+    </div>
+
+    <!-- Admin Button -->
+    <button class="admin-btn" onclick="showAdmin()">👨‍💼 Admin</button>
+
+    <script>
+        // Game data
+        let participants = [];
+        let scores = [];
+        let errors = [];
+        let currentPlayer = 0;
+        let currentGame = 0;
+        let timer = 70;
+        let timerInterval;
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let currentAnswer = '';
+
+        // Game data arrays
+        const colors = [
+            { spanish: 'Rojo oscuro', english: 'Dark red', class: 'color-rojo-oscuro' },
+            { spanish: 'Azul oscuro', english: 'Dark blue', class: 'color-azul-oscuro' },
+            { spanish: 'Verde oscuro', english: 'Dark green', class: 'color-verde-oscuro' },
+            { spanish: 'Amarillo oscuro', english: 'Dark yellow', class: 'color-amarillo-oscuro' },
+            { spanish: 'Morado oscuro', english: 'Dark purple', class: 'color-morado-oscuro' },
+            { spanish: 'Gris oscuro', english: 'Dark gray', class: 'color-gris-oscuro' }
+        ];
+
+        const animals = [
+            { spanish: 'Perro', english: 'Dog', emoji: '🐶' },
+            { spanish: 'Gato', english: 'Cat', emoji: '🐱' },
+            { spanish: 'Ratón', english: 'Mouse', emoji: '🐭' },
+            { spanish: 'Hámster', english: 'Hamster', emoji: '🐹' },
+            { spanish: 'Conejo', english: 'Rabbit', emoji: '🐰' },
+            { spanish: 'Zorro', english: 'Fox', emoji: '🦊' }
+        ];
+
+        const emotions = [
+            { spanish: 'Feliz', english: 'Happy', emoji: '😀' },
+            { spanish: 'Triste', english: 'Sad', emoji: '😢' },
+            { spanish: 'Enojado', english: 'Angry', emoji: '😡' },
+            { spanish: 'Sorprendido', english: 'Surprised', emoji: '😱' },
+            { spanish: 'Dormido', english: 'Sleepy', emoji: '😴' },
+            { spanish: 'Enamorado', english: 'In love', emoji: '😍' }
+        ];
+
+        const games = [
+            'memory-colors', 'memory-animals', 'memory-emotions',
+            'writing-colors', 'writing-animals', 'writing-emotions'
+        ];
+
+        // Utility functions
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showSetup() {
+            showScreen('setup-screen');
+        }
+
+        function showAdmin() {
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+
+        function hideAdmin() {
+            document.getElementById('login-screen').style.display = 'none';
+        }
+
+        function adminLogin() {
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
+            
+            if (user === 'Cheft_gamer68' && pass === 'nixbox top') {
+                hideAdmin();
+                showScreen('admin-screen');
+                document.getElementById('admin-user').value = '';
+                document.getElementById('admin-pass').value = '';
+            } else {
+                alert('Credenciales incorrectas');
+            }
+        }
+
+        // Admin Panel Functions
+        function mostrarRespuestasInteractivas() {
+            const container = document.getElementById('respuestas-interactivas');
+            container.style.display = 'block';
+            
+            // Respuestas para Memoria de Colores
+            const coloresGrid = document.getElementById('respuestas-colores-grid');
+            coloresGrid.innerHTML = '';
+            colors.forEach(color => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold; transition: all 0.3s ease;';
+                item.style.backgroundColor = getColorFromClass(color.class);
+                item.style.color = 'white';
+                item.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+                item.textContent = `${color.spanish} = ${color.english}`;
+                coloresGrid.appendChild(item);
+            });
+            
+            // Respuestas para Memoria de Animales
+            const animalesGrid = document.getElementById('respuestas-animales-grid');
+            animalesGrid.innerHTML = '';
+            animals.forEach(animal => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold; transition: all 0.3s ease;';
+                item.innerHTML = `${animal.emoji} = ${animal.english} / ${animal.spanish}`;
+                animalesGrid.appendChild(item);
+            });
+            
+            // Respuestas para Memoria de Emociones
+            const emocionesGrid = document.getElementById('respuestas-emociones-grid');
+            emocionesGrid.innerHTML = '';
+            emotions.forEach(emotion => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold; transition: all 0.3s ease;';
+                item.innerHTML = `${emotion.emoji} = ${emotion.english} / ${emotion.spanish}`;
+                emocionesGrid.appendChild(item);
+            });
+
+            // Respuestas para Escritura de Colores
+            const escrituraColoresGrid = document.getElementById('respuestas-escritura-colores-grid');
+            escrituraColoresGrid.innerHTML = '';
+            colors.forEach(color => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold; transition: all 0.3s ease;';
+                item.style.backgroundColor = getColorFromClass(color.class);
+                item.style.color = 'white';
+                item.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+                item.textContent = `${color.english} / ${color.spanish}`;
+                escrituraColoresGrid.appendChild(item);
+            });
+
+            // Respuestas para Escritura de Animales
+            const escrituraAnimalesGrid = document.getElementById('respuestas-escritura-animales-grid');
+            escrituraAnimalesGrid.innerHTML = '';
+            animals.forEach(animal => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold; transition: all 0.3s ease;';
+                item.innerHTML = `${animal.emoji} → ${animal.english} / ${animal.spanish}`;
+                escrituraAnimalesGrid.appendChild(item);
+            });
+
+            // Respuestas para Escritura de Emociones
+            const escrituraEmocionesGrid = document.getElementById('respuestas-escritura-emociones-grid');
+            escrituraEmocionesGrid.innerHTML = '';
+            emotions.forEach(emotion => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: white; padding: 10px; border-radius: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold; transition: all 0.3s ease;';
+                item.innerHTML = `${emotion.emoji} → ${emotion.english} / ${emotion.spanish}`;
+                escrituraEmocionesGrid.appendChild(item);
+            });
+        }
+
+        function getColorFromClass(className) {
+            const colorMap = {
+                'color-rojo-oscuro': 'darkred',
+                'color-azul-oscuro': 'darkblue',
+                'color-verde-oscuro': 'darkgreen',
+                'color-amarillo-oscuro': '#B8860B',
+                'color-morado-oscuro': 'darkmagenta',
+                'color-gris-oscuro': 'dimgray'
+            };
+            return colorMap[className] || '#333';
+        }
+
+        function ocultarRespuestas() {
+            document.getElementById('respuestas-interactivas').style.display = 'none';
+        }
+
+        function irAJuegoSeleccionado() {
+            const selected = document.getElementById('cambiar-juego-select').value;
+            if (selected) {
+                // Clear any existing timers
+                clearInterval(timerInterval);
+                
+                // Show the selected screen
+                showScreen(selected);
+                
+                // Reset game state and initialize properly
+                if (participants.length > 0) {
+                    switch(selected) {
+                        case 'memory-colors':
+                            currentGame = 0;
+                            currentPlayer = 0;
+                            flippedCards = [];
+                            matchedPairs = 0;
+                            startMemoryGame(0);
+                            break;
+                        case 'memory-animals':
+                            currentGame = 1;
+                            currentPlayer = 0;
+                            flippedCards = [];
+                            matchedPairs = 0;
+                            startMemoryGame(1);
+                            break;
+                        case 'memory-emotions':
+                            currentGame = 2;
+                            currentPlayer = 0;
+                            flippedCards = [];
+                            matchedPairs = 0;
+                            startMemoryGame(2);
+                            break;
+                        case 'writing-colors':
+                            currentGame = 3;
+                            currentPlayer = 0;
+                            currentAnswer = '';
+                            startWritingGame(0);
+                            break;
+                        case 'writing-animals':
+                            currentGame = 4;
+                            currentPlayer = 0;
+                            currentAnswer = '';
+                            startWritingGame(1);
+                            break;
+                        case 'writing-emotions':
+                            currentGame = 5;
+                            currentPlayer = 0;
+                            currentAnswer = '';
+                            startWritingGame(2);
+                            break;
+                        case 'final-results':
+                            showFinalResults();
+                            break;
+                    }
+                } else {
+                    alert('Primero debes agregar participantes para jugar');
+                }
+            } else {
+                alert('Por favor selecciona un juego');
+            }
+        }
+
+        function resetearPuntos() {
+            if (participants.length > 0) {
+                if (confirm('¿Estás seguro de que quieres resetear todos los puntos?')) {
+                    scores.fill(0);
+                    errors.fill(0);
+                    alert('Puntos y errores reseteados correctamente');
+                    actualizarTodasLasTablasDePuntos();
+                }
+            } else {
+                alert('No hay participantes para resetear puntos');
+            }
+        }
+
+        function cambiarPuntos() {
+            const index = parseInt(document.getElementById('cambiar-puntos-index').value);
+            const valor = parseInt(document.getElementById('cambiar-puntos-valor').value);
+            
+            if (!isNaN(index) && index >= 0 && index < participants.length && !isNaN(valor) && valor >= 0) {
+                scores[index] = valor;
+                alert(`Puntos de ${participants[index]} cambiados a ${valor}`);
+                actualizarTodasLasTablasDePuntos();
+                document.getElementById('cambiar-puntos-index').value = '';
+                document.getElementById('cambiar-puntos-valor').value = '';
+            } else {
+                if (participants.length === 0) {
+                    alert('No hay participantes agregados');
+                } else {
+                    alert('Por favor ingresa valores válidos. Índice debe estar entre 0 y ' + (participants.length - 1));
+                }
+            }
+        }
+
+        function simularRespuestaIncorrecta() {
+            // Get current game information
+            let juegoActual = 'N/A';
+            let preguntaActual = 'N/A';
+            let jugadorActual = participants.length > 0 ? participants[currentPlayer] : 'N/A';
+            
+            // Determine current game and question based on currentGame
+            if (currentGame >= 0 && currentGame < games.length) {
+                const gameNames = [
+                    '🎨 Memoria de Colores Oscuros',
+                    '🐾 Memoria de Animales', 
+                    '😊 Memoria de Emociones',
+                    '✏️ Escritura de Colores',
+                    '🦊 Escritura de Animales',
+                    '😍 Escritura de Emociones'
+                ];
+                
+                juegoActual = gameNames[currentGame] || 'Juego no identificado';
+                
+                // Get current question based on game type
+                if (currentGame >= 3) { // Writing games
+                    if (currentAnswer && currentAnswer !== '') {
+                        preguntaActual = currentAnswer;
+                    } else {
+                        // Get a sample question from the current writing game
+                        if (currentGame === 3) { // Colors
+                            preguntaActual = `${colors[0].english} / ${colors[0].spanish}`;
+                        } else if (currentGame === 4) { // Animals
+                            preguntaActual = `${animals[0].english} / ${animals[0].spanish}`;
+                        } else if (currentGame === 5) { // Emotions
+                            preguntaActual = `${emotions[0].english} / ${emotions[0].spanish}`;
+                        }
+                    }
+                } else { // Memory games
+                    if (currentGame === 0) { // Colors
+                        preguntaActual = 'Encontrar parejas de colores oscuros';
+                    } else if (currentGame === 1) { // Animals
+                        preguntaActual = 'Encontrar parejas de animales';
+                    } else if (currentGame === 2) { // Emotions
+                        preguntaActual = 'Encontrar parejas de emociones';
+                    }
+                }
+            }
+            
+            // Create detailed simulation message
+            const simulationInfo = `
+🎮 SIMULACIÓN DE RESPUESTA INCORRECTA 🎮
+
+📋 Información del Juego:
+• Juego: ${juegoActual}
+• Pregunta/Objetivo: ${preguntaActual}
+• Jugador Actual: ${jugadorActual}
+• Turno: ${currentPlayer + 1}/${participants.length}
+
+⚠️ Esta es una simulación visual que no afecta el juego real.
+            `.trim();
+            
+            // Apply random visual effect
+            const efectos = [
+                () => {
+                    document.body.style.filter = 'hue-rotate(180deg)';
+                    setTimeout(() => document.body.style.filter = 'none', 3000);
+                    return 'Efecto de colores invertidos aplicado';
+                },
+                () => {
+                    document.body.style.filter = 'blur(2px)';
+                    setTimeout(() => document.body.style.filter = 'none', 2000);
+                    return 'Efecto de desenfoque aplicado';
+                },
+                () => {
+                    document.body.style.transform = 'rotate(5deg)';
+                    setTimeout(() => document.body.style.transform = 'none', 2500);
+                    return 'Efecto de rotación aplicado';
+                },
+                () => {
+                    document.body.style.filter = 'grayscale(100%)';
+                    setTimeout(() => document.body.style.filter = 'none', 3000);
+                    return 'Efecto escala de grises aplicado';
+                },
+                () => {
+                    document.body.style.animation = 'shake 0.5s ease-in-out 0s 3';
+                    if (!document.getElementById('shake-animation')) {
+                        const style = document.createElement('style');
+                        style.id = 'shake-animation';
+                        style.textContent = '@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }';
+                        document.head.appendChild(style);
+                    }
+                    setTimeout(() => {
+                        document.body.style.animation = '';
+                    }, 1500);
+                    return 'Efecto de vibración aplicado';
+                },
+                () => {
+                    document.body.style.filter = 'sepia(100%)';
+                    setTimeout(() => document.body.style.filter = 'none', 3000);
+                    return 'Efecto sepia vintage aplicado';
+                },
+                () => {
+                    document.body.style.filter = 'contrast(200%) brightness(150%)';
+                    setTimeout(() => document.body.style.filter = 'none', 2500);
+                    return 'Efecto de alto contraste aplicado';
+                }
+            ];
+            
+            const efectoAleatorio = efectos[Math.floor(Math.random() * efectos.length)];
+            const efectoMensaje = efectoAleatorio();
+            
+            // Show detailed alert with game info and visual effect
+            alert(`${simulationInfo}\n\n🎨 ${efectoMensaje}`);
+        }
+
+        function volverAlMenu() {
+            showScreen('rules-screen');
+        }
+
+        function actualizarTodasLasTablasDePuntos() {
+            // Update all score displays that are currently visible
+            const gameTypes = ['colors', 'animals', 'emotions', 'write-colors', 'write-animals', 'write-emotions'];
+            gameTypes.forEach(type => {
+                const scoreContainer = document.getElementById(`scores-${type}`);
+                if (scoreContainer) {
+                    updateScores(type);
+                }
+            });
+        }
+
+        // Participant management
+        function addParticipant() {
+            const nameInput = document.getElementById('participant-name');
+            const name = nameInput.value.trim();
+            
+            if (name && participants.length < 10) {
+                participants.push(name);
+                scores.push(0);
+                errors.push(0);
+                nameInput.value = '';
+                updateParticipantsList();
+                
+                document.getElementById('start-roulette-btn').disabled = participants.length === 0;
+            } else if (participants.length >= 10) {
+                alert('Máximo 10 participantes permitidos.');
+            }
+        }
+
+        function updateParticipantsList() {
+            const container = document.getElementById('participants-container');
+            if (participants.length === 0) {
+                container.innerHTML = '<p>No hay participantes agregados</p>';
+            } else {
+                container.innerHTML = participants.map((name, index) => 
+                    `<div class="participant-item">${index + 1}. ${name}</div>`
+                ).join('');
+            }
+        }
+
+        // Roulette functions
+        function startRoulette() {
+            if (participants.length === 0) {
+                alert('Agrega al menos un participante.');
+                return;
+            }
+            showScreen('roulette-screen');
+            createRoulette();
+        }
+
+        function createRoulette() {
+            const svg = document.getElementById('roulette-svg');
+            svg.innerHTML = '';
+            
+            const anglePerSegment = 360 / participants.length;
+            
+            participants.forEach((participant, index) => {
+                const startAngle = index * anglePerSegment;
+                const endAngle = (index + 1) * anglePerSegment;
+                
+                const x1 = 150 + 150 * Math.cos(startAngle * Math.PI / 180);
+                const y1 = 150 + 150 * Math.sin(startAngle * Math.PI / 180);
+                const x2 = 150 + 150 * Math.cos(endAngle * Math.PI / 180);
+                const y2 = 150 + 150 * Math.sin(endAngle * Math.PI / 180);
+                
+                const largeArc = anglePerSegment > 180 ? 1 : 0;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M 150 150 L ${x1} ${y1} A 150 150 0 ${largeArc} 1 ${x2} ${y2} Z`);
+                path.setAttribute('fill', `hsl(${index * anglePerSegment}, 70%, 60%)`);
+                svg.appendChild(path);
+                
+                const textAngle = (startAngle + endAngle) / 2;
+                const textX = 150 + 80 * Math.cos(textAngle * Math.PI / 180);
+                const textY = 150 + 80 * Math.sin(textAngle * Math.PI / 180);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', textX);
+                text.setAttribute('y', textY);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', 'white');
+                text.setAttribute('font-size', '14');
+                text.setAttribute('font-weight', 'bold');
+                text.textContent = participant;
+                svg.appendChild(text);
+            });
+        }
+
+        function spinRoulette() {
+            const roulette = document.getElementById('roulette');
+            const spins = Math.random() * 360 + 1800; // 5+ full rotations
+            
+            roulette.style.transform = `rotate(${spins}deg)`;
+            
+            setTimeout(() => {
+                const finalAngle = spins % 360;
+                const segmentAngle = 360 / participants.length;
+                const winnerIndex = Math.floor((360 - finalAngle) / segmentAngle) % participants.length;
+                
+                currentPlayer = winnerIndex;
+                
+                document.getElementById('roulette-result').innerHTML = 
+                    `<h2 style="color: #333; background: rgba(255,255,255,0.9); padding: 20px; border-radius: 15px; margin: 20px auto; display: inline-block;">¡${participants[winnerIndex]} comenzará el juego!</h2>`;
+                
+                setTimeout(() => startGame(0), 3000);
+            }, 3000);
+        }
+
+        // Game management
+        function startGame(gameIndex) {
+            currentGame = gameIndex;
+            showScreen(games[gameIndex]);
+            
+            if (gameIndex < 3) {
+                startMemoryGame(gameIndex);
+            } else {
+                startWritingGame(gameIndex - 3);
+            }
+        }
+
+        function nextPlayer() {
+            currentPlayer = (currentPlayer + 1) % participants.length;
+        }
+
+        function nextGame() {
+            currentGame++;
+            if (currentGame >= games.length) {
+                showFinalResults();
+            } else {
+                currentPlayer = 0; // Reset to first player for new game
+                startGame(currentGame);
+            }
+        }
+
+        // Timer functions
+        function startTimer(gameType) {
+            timer = 70;
+            const timerElement = document.getElementById(`timer-${gameType}`);
+            timerElement.textContent = timer;
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timer--;
+                timerElement.textContent = timer;
+                
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeUp();
+                }
+            }, 1000);
+        }
+
+        function handleTimeUp() {
+            if (currentGame < 3) {
+                // Memory game - move to next player or next game
+                nextPlayer();
+                if (currentPlayer === 0) {
+                    nextGame();
+                } else {
+                    startGame(currentGame);
+                }
+            } else {
+                // Writing game - show incorrect and move to next
+                showIncorrectAnswer();
+                setTimeout(() => {
+                    nextPlayer();
+                    if (currentPlayer === 0) {
+                        nextGame();
+                    } else {
+                        startGame(currentGame);
+                    }
+                }, 2000);
+            }
+        }
+
+        // Memory game functions
+        function startMemoryGame(gameIndex) {
+            const gameTypes = ['colors', 'animals', 'emotions'];
+            const gameType = gameTypes[gameIndex];
+            
+            updatePlayerInfo(gameType);
+            createMemoryGrid(gameType);
+            startTimer(gameType);
+            
+            flippedCards = [];
+            matchedPairs = 0;
+        }
+
+        function createMemoryGrid(gameType) {
+            const grid = document.getElementById(`grid-${gameType}`);
+            grid.innerHTML = '';
+            
+            let gameData;
+            if (gameType === 'colors') gameData = colors;
+            else if (gameType === 'animals') gameData = animals;
+            else if (gameType === 'emotions') gameData = emotions;
+            
+            // Create pairs
+            const cards = [...gameData, ...gameData];
+            shuffleArray(cards);
+            
+            cards.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = `memory-card ${gameType === 'colors' ? '' : gameType.slice(0, -1)}`;
+                card.dataset.index = index;
+                card.dataset.value = gameType === 'colors' ? item.spanish : (gameType === 'animals' ? item.emoji : item.emoji);
+                
+                if (gameType === 'colors') {
+                    card.dataset.class = item.class;
+                }
+                
+                card.addEventListener('click', () => flipCard(card, gameType));
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard(card, gameType) {
+            if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+            
+            card.classList.add('flipped');
+            
+            if (gameType === 'colors') {
+                card.classList.add(card.dataset.class);
+                card.textContent = card.dataset.value;
+            } else {
+                card.textContent = card.dataset.value;
+            }
+            
+            flippedCards.push(card);
+            
+            if (flippedCards.length === 2) {
+                setTimeout(() => checkMatch(gameType), 1000);
+            }
+        }
+
+        function checkMatch(gameType) {
+            const [card1, card2] = flippedCards;
+            
+            if (card1.dataset.value === card2.dataset.value) {
+                // Match found
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                scores[currentPlayer]++;
+                matchedPairs++;
+                
+                updateScores(gameType);
+                
+                if (matchedPairs === 6) {
+                    // Game completed
+                    clearInterval(timerInterval);
+                    setTimeout(() => {
+                        currentPlayer = 0;
+                        nextGame();
+                    }, 2000);
+                }
+            } else {
+                // No match
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+                
+                if (gameType === 'colors') {
+                    card1.classList.remove(card1.dataset.class);
+                }
+                
+                card1.textContent = '';
+                card2.textContent = '';
+                
+                // Move to next player
+                nextPlayer();
+                if (currentPlayer === 0) {
+                    nextGame();
+                } else {
+                    startGame(currentGame);
+                }
+            }
+            
+            flippedCards = [];
+        }
+
+        // Writing game functions
+        function startWritingGame(gameIndex) {
+            const gameTypes = ['colors', 'animals', 'emotions'];
+            const gameType = gameTypes[gameIndex];
+            
+            updatePlayerInfo(`write-${gameType}`);
+            showRandomItem(gameType);
+            startTimer(`write-${gameType}`);
+            
+            // Clear previous input and feedback
+            document.getElementById(`input-write-${gameType}`).value = '';
+            document.getElementById(`feedback-write-${gameType}`).innerHTML = '';
+            
+            // Add enter key listener
+            const input = document.getElementById(`input-write-${gameType}`);
+            input.onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    checkWritingAnswer(gameType);
+                }
+            };
+        }
+
+        function showRandomItem(gameType) {
+            let gameData, randomItem;
+            
+            if (gameType === 'colors') {
+                gameData = colors;
+                randomItem = gameData[Math.floor(Math.random() * gameData.length)];
+                currentAnswer = `${randomItem.english} / ${randomItem.spanish}`;
+                
+                const display = document.getElementById('display-write-colors');
+                display.className = `writing-display color ${randomItem.class}`;
+                display.textContent = randomItem.spanish;
+            } else if (gameType === 'animals') {
+                gameData = animals;
+                randomItem = gameData[Math.floor(Math.random() * gameData.length)];
+                currentAnswer = `${randomItem.english} / ${randomItem.spanish}`;
+                
+                const display = document.getElementById('display-write-animals');
+                display.textContent = randomItem.emoji;
+            } else if (gameType === 'emotions') {
+                gameData = emotions;
+                randomItem = gameData[Math.floor(Math.random() * gameData.length)];
+                currentAnswer = `${randomItem.english} / ${randomItem.spanish}`;
+                
+                const display = document.getElementById('display-write-emotions');
+                display.textContent = randomItem.emoji;
+            }
+        }
+
+        function checkWritingAnswer(gameType) {
+            const input = document.getElementById(`input-write-${gameType}`);
+            const feedback = document.getElementById(`feedback-write-${gameType}`);
+            const userAnswer = input.value.trim();
+            
+            clearInterval(timerInterval);
+            
+            if (userAnswer.toLowerCase() === currentAnswer.toLowerCase()) {
+                // Correct answer
+                scores[currentPlayer]++;
+                feedback.className = 'feedback correct';
+                feedback.textContent = '¡Correcto! +1 punto';
+                updateScores(`write-${gameType}`);
+            } else {
+                // Incorrect answer
+                errors[currentPlayer]++;
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = `Incorrecto. La respuesta correcta era: ${currentAnswer}`;
+            }
+            
+            setTimeout(() => {
+                nextPlayer();
+                if (currentPlayer === 0) {
+                    nextGame();
+                } else {
+                    startGame(currentGame);
+                }
+            }, 3000);
+        }
+
+        function showIncorrectAnswer() {
+            const gameTypes = ['colors', 'animals', 'emotions'];
+            const gameType = gameTypes[currentGame - 3];
+            const feedback = document.getElementById(`feedback-write-${gameType}`);
+            
+            errors[currentPlayer]++;
+            feedback.className = 'feedback incorrect';
+            feedback.textContent = `Tiempo agotado. La respuesta correcta era: ${currentAnswer}`;
+        }
+
+        // UI update functions
+        function updatePlayerInfo(gameType) {
+            document.getElementById(`current-player-${gameType}`).textContent = participants[currentPlayer];
+            updateScores(gameType);
+        }
+
+        function updateScores(gameType) {
+            const scoresContainer = document.getElementById(`scores-${gameType}`);
+            scoresContainer.innerHTML = participants.map((name, index) => 
+                `<div class="score-item">${name}: ${scores[index]} puntos</div>`
+            ).join('');
+        }
+
+        // Final results
+        function showFinalResults() {
+            showScreen('final-results');
+            
+            // Create results array with participants and their stats
+            const results = participants.map((name, index) => ({
+                name: name,
+                points: scores[index],
+                errors: errors[index],
+                index: index
+            }));
+            
+            // Sort by points (descending), then by errors (ascending)
+            results.sort((a, b) => {
+                if (b.points !== a.points) {
+                    return b.points - a.points;
+                }
+                return a.errors - b.errors;
+            });
+            
+            const tbody = document.getElementById('final-results-body');
+            tbody.innerHTML = results.map((result, position) => 
+                `<tr${position === 0 ? ' class="winner-row"' : ''}>
+                    <td>${result.name}</td>
+                    <td>${result.points}</td>
+                    <td>${result.errors}</td>
+                    <td>${position + 1}°</td>
+                </tr>`
+            ).join('');
+        }
+
+        // Utility functions
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function resetGame() {
+            participants = [];
+            scores = [];
+            errors = [];
+            currentPlayer = 0;
+            currentGame = 0;
+            timer = 70;
+            clearInterval(timerInterval);
+            showScreen('rules-screen');
+            updateParticipantsList();
+        }
+
+        // Add enter key support for participant input
+        document.getElementById('participant-name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addParticipant();
+            }
+        });
+    </script>
+</body>
+</html>
+                
